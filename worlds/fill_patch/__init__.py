@@ -13,7 +13,8 @@ class FillPatchWorld(World):
     """Utility APWorld that patches the generation fill algorithm."""
     game = "Fill Algorithm Patch"
     hidden = True
-
+    item_name_to_id = {}
+    location_name_to_id = {}
 
 def apply_fill_patch():
     global _PATCH_APPLIED
