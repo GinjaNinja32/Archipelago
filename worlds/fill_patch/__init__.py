@@ -20,15 +20,18 @@ def apply_fill_patch():
     if _PATCH_APPLIED:
         return
 
+    original_fill_restrictive = getattr(Fill, "fill_restrictive", None)
+    original_remaining_fill = getattr(Fill, "remaining_fill", None)
+
     Fill.fill_restrictive = fill_restrictive
     Fill.remaining_fill = remaining_fill
 
     # update modules which used "from Fill import fill_restrictive"
     for mod_name, mod in sys.modules.items():
         if mod and mod_name != __name__:
-            if hasattr(mod, "fill_restrictive"):
+            if getattr(mod, "fill_restrictive", None) is original_fill_restrictive:
                 setattr(mod, "fill_restrictive", fill_restrictive)
-            if hasattr(mod, "remaining_fill"):
+            if getattr(mod, "remaining_fill", None) is original_remaining_fill:
                 setattr(mod, "remaining_fill", remaining_fill)
 
     _PATCH_APPLIED = True
