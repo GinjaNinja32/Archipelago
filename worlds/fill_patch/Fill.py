@@ -3,6 +3,7 @@ import collections
 import itertools
 import logging
 import typing
+import time
 from collections import Counter, deque
 
 from BaseClasses import CollectionState, Item, Location, LocationProgressType, MultiWorld, PlandoItemBlock
@@ -22,7 +23,8 @@ class FillError(RuntimeError):
 
 
 def _log_fill_progress(name: str, placed: int, total_items: int) -> None:
-    logging.info(f"Current fill step ({name}) at {placed}/{total_items} items placed.")
+    local_time = time.strftime("%H:%M:%S %d %b %Y", time.localtime())
+    logging.info(f"Current fill step ({name}) at {placed}/{total_items} items placed. [{local_time}]")
 
 
 def sweep_from_pool(base_state: CollectionState, itempool: typing.Sequence[Item] = tuple(),
@@ -790,6 +792,7 @@ def fill_restrictive(multiworld: MultiWorld, base_state: CollectionState, locati
     # for progress logging
     total = min(len(item_pool), len(locations))
     placed = 0
+    last_log_time = time.time()
 
     # Fill is performed in batches so that sweeping to produce a maximum exploration state can begin from the state at
     # the start of each batch, rather than having to sweep from `base_state`.
@@ -919,8 +922,10 @@ def fill_restrictive(multiworld: MultiWorld, base_state: CollectionState, locati
             spot_to_fill.locked = lock
             placements.append(spot_to_fill)
             placed += 1
-            if not placed % 1000:
+            current_time = time.time()
+            if not placed % 1000 or (current_time - last_log_time) >= 300:
                 _log_fill_progress(name, placed, total)
+                last_log_time = current_time
             if on_place:
                 on_place(spot_to_fill)
 
@@ -983,6 +988,7 @@ def remaining_fill(multiworld: MultiWorld,
     swapped_items: typing.Counter[typing.Tuple[int, str]] = Counter()
     total = min(len(itempool), len(locations))
     placed = 0
+    last_log_time = time.time()
 
     # Optimisation: Decide whether to do full location.can_fill check (respect excluded), or only check the item rule
     if check_location_can_fill:
@@ -1044,8 +1050,10 @@ def remaining_fill(multiworld: MultiWorld,
         multiworld.push_item(spot_to_fill, item_to_place, False)
         placements.append(spot_to_fill)
         placed += 1
-        if not placed % 1000:
+        current_time = time.time()
+        if not placed % 1000 or (current_time - last_log_time) >= 300:
             _log_fill_progress(name, placed, total)
+            last_log_time = current_time
 
     if total > 1000:
         _log_fill_progress(name, placed, total)
